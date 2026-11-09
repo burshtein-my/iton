@@ -1,0 +1,102 @@
+# Настройки AI-газеты.
+# Править можно прямо на GitHub: открыть этот файл → значок карандаша → «Commit changes».
+
+newspaper:
+  title: "AI-ГАЗЕТА"            # название в шапке газеты
+  name: "AI-газета"             # название в теме письма
+  subtitle: "Нейросети США и Китая · расширения для Claude"
+  city: "Тират-Кармель"
+  timezone: "Asia/Jerusalem"
+
+models:
+  # Отбор новостей из общего списка — дешёвая быстрая модель
+  select: "claude-haiku-5-5"
+  # Заметки по-русски. Для максимальной экономии можно поставить claude-haiku-5-5
+  write: "claude-sonnet-5-5"
+
+limits:
+  company_window_hours: 30     # за сколько часов брать новости компаний
+  community_window_hours: 96   # окно для Хабра, Hacker News, Reddit, GitHub (популярность набирается не сразу)
+  max_selected: 16             # максимум заметок в номере
+  article_chars: 6000          # сколько символов каждой статьи отдавать Claude
+
+popularity:                    # что считается «популярно у гиков»
+  habr_min_score: 10           # рейтинг статьи на Хабре
+  habr_min_favorites: 15       # или столько закладок (для практических статей это главный признак пользы)
+  habr_min_comments: 25        # или столько комментариев
+  hn_min_points: 100           # очки на Hacker News
+  reddit_min_upvotes: 200      # апвоуты на Reddit
+  github_min_stars: 50         # звёзды у нового репозитория
+
+# Ваш вкус словами. Claude читает это, когда отбирает и пишет заметки. Меняйте как хочется.
+taste: |
+  Интересно больше всего — фишки Claude и Claude Code для не-программистских задач:
+  дизайн и вёрстка (Figma, макеты, баннеры, презентации, полиграфия), видеомонтаж и генерация видео,
+  продвижение в интернете (SMM, SEO, таргетированная реклама, контент-план, тексты для соцсетей),
+  жизненные и бытовые задачи (документы, письма, планирование, учёба, семья, личные финансы).
+  Особенно ценно: готовые skills, MCP-серверы, плагины, надстройки и приёмы, которые можно поставить
+  и применить сегодня, с понятной пользой.
+  Меньше интересно: чистое программирование, внутренности моделей, бенчмарки, споры об ИИ.
+  Неинтересно: инвестиции, IPO, кадровые новости, политика, философия ИИ, реклама курсов.
+
+habr:
+  # Любимые авторы: их новые статьи берутся всегда, без порога популярности.
+  # Логин — из адреса профиля: habr.com/ru/users/ЛОГИН/
+  favorite_authors:
+    - python_leader     # большой гайд по Skills для Claude Code (355 закладок)
+    - Neurosonya        # маршрут обучения Claude Code и полезные ресурсы (247 закладок)
+    - memrook           # Claude Code для не-программистов (137 закладок)
+  # Авторы, которых не показывать вовсе
+  blocked_authors: []
+  # Поиск по Хабру (берутся только статьи, набравшие популярность)
+  queries: ["Claude Code", "Claude skills", "Claude MCP", "Claude дизайн", "Claude видео",
+            "Claude маркетинг", "Claude SEO", "Claude Figma", "Anthropic"]
+  corporate_factor: 2          # для блогов компаний пороги популярности в 2 раза выше (там много рекламы)
+  max_minus_share: 0.35        # отсекать статьи, где минусов больше 35% голосов
+
+sources:
+  # Ленты RSS. group: us — США, china — Китай, claude — всё про Claude, other — прочее
+  rss:
+    - {name: "OpenAI", url: "https://openai.com/news/rss.xml", group: us}
+    - {name: "Google DeepMind", url: "https://deepmind.google/blog/rss.xml", group: us}
+    - {name: "Google AI", url: "https://blog.google/technology/ai/rss/", group: us}
+    - {name: "Microsoft AI", url: "https://blogs.microsoft.com/ai/feed/", group: us}
+    - {name: "NVIDIA", url: "https://blogs.nvidia.com/feed/", group: us}
+    - {name: "Hugging Face", url: "https://huggingface.co/blog/feed.xml", group: other}
+    - {name: "Claude Code — релизы", url: "https://github.com/anthropics/claude-code/releases.atom", group: claude}
+
+  # Сайты без RSS: скрипт запоминает ссылки на странице и сообщает о новых
+  pages:
+    - {name: "Anthropic", url: "https://www.anthropic.com/news", pattern: "/news/[a-z0-9-]+", group: us}
+    - {name: "Claude blog", url: "https://claude.com/blog", pattern: "/blog/[a-z0-9-]+", group: claude}
+    - {name: "xAI", url: "https://x.ai/news", pattern: "/news/[a-z0-9-]+", group: us}
+    - {name: "Meta AI", url: "https://ai.meta.com/blog/", pattern: "/blog/[a-z0-9-]+", group: us}
+    - {name: "DeepSeek", url: "https://api-docs.deepseek.com/news/", pattern: "/news/news[0-9a-z-]+", group: china}
+
+  # Поиск по новостям Google за последние сутки
+  google_news:
+    - {q: "Anthropic Claude", group: us}
+    - {q: "OpenAI ChatGPT", group: us}
+    - {q: "Google Gemini", group: us}
+    - {q: "Meta AI Llama", group: us}
+    - {q: "xAI Grok", group: us}
+    - {q: "Midjourney OR Runway OR \"Adobe Firefly\"", group: us}
+    - {q: "DeepSeek", group: china}
+    - {q: "Qwen Alibaba", group: china}
+    - {q: "ByteDance Doubao OR Seedance OR Seedream", group: china}
+    - {q: "Moonshot Kimi", group: china}
+    - {q: "Zhipu GLM OR \"Z.ai\"", group: china}
+    - {q: "MiniMax OR Hailuo AI", group: china}
+    - {q: "Tencent Hunyuan", group: china}
+    - {q: "Baidu ERNIE", group: china}
+    - {q: "Kling AI", group: china}
+
+  # Новые модели на Hugging Face от этих авторов
+  huggingface_authors:
+    us: [openai, google, meta-llama, microsoft, nvidia]
+    china: [deepseek-ai, Qwen, moonshotai, zai-org, MiniMaxAI, tencent, baidu, ByteDance-Seed, stepfun-ai]
+
+  # Сообщества гиков — для блока про Claude (Хабр настраивается выше, в разделе habr)
+  hn_queries: ["Claude", "Anthropic", "MCP", "OpenAI", "Gemini", "DeepSeek", "Qwen"]
+  reddit: [ClaudeAI, ClaudeCode, LocalLLaMA]
+  github_queries: ["claude code", "claude skills", "mcp server", "claude plugin", "figma mcp", "claude video"]
