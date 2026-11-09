@@ -1,0 +1,84 @@
+{% macro meta(a) %}
+<div class="meta">
+  {% if a.availability %}<div><span class="m">Доступ:</span> {{ a.availability }}</div>{% endif %}
+  {% if a.popularity %}<div><span class="m">Популярность:</span> {{ a.popularity }}</div>{% endif %}
+  {% if a.install %}<div><span class="m">Установка:</span> <code>{{ a.install }}</code></div>{% endif %}
+  {% if a.warning %}<div class="warn">Внимание: малоизвестный автор и широкий доступ — проверить перед установкой.</div>{% endif %}
+  <div class="src">{{ a.source_name }}{% if a.url %} · <a href="{{ a.url }}">{{ a.url|domain }}</a>{% endif %}</div>
+</div>
+{% endmacro %}
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>{{ title }} · № {{ issue }}</title>
+<style>
+{% include "style.css" %}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="topline">
+    <span>{{ weekday_date }}</span>
+    <span>{% if demo %}Пробный номер{% else %}Выпуск № {{ issue }}{% endif %}</span>
+    <span>{{ city }}</span>
+  </div>
+  <h1>{{ title }}</h1>
+  <div class="subtitle">{{ subtitle }}</div>
+</header>
+
+{% if top %}
+<section class="top">
+  <div class="label">Главное</div>
+  <ol>
+    {% for t in top %}<li>{{ t }}</li>{% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{% if lead %}
+<article class="lead">
+  <div class="kicker">{{ section_names[lead.section] }} · {{ lead.kicker }}</div>
+  <h2>{{ lead.title }}</h2>
+  <div class="lead-body">
+    <p>{{ lead.text }}</p>
+    {{ meta(lead) }}
+  </div>
+</article>
+{% endif %}
+
+{% if sections %}
+<div class="cols">
+  {% for sec in sections %}
+  <h3 class="sec-title sec-{{ sec.key }}">{{ sec.name }}</h3>
+  {% for a in sec.articles %}
+  <article class="item">
+    <div class="kicker">{{ a.kicker }}</div>
+    <h4>{{ a.title }}</h4>
+    <p>{{ a.text }}</p>
+    {{ meta(a) }}
+  </article>
+  {% endfor %}
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if try_this %}
+<section class="try">
+  <div class="label">Стоит попробовать</div>
+  {% for t in try_this %}
+  <p><b>{{ t.title }}.</b> {{ t.why }}{% if t.url %} <a href="{{ t.url }}">{{ t.url|domain }}</a>{% endif %}</p>
+  {% endfor %}
+</section>
+{% endif %}
+
+{% if not demo %}
+<footer class="colophon">
+  Собрано автоматически: {{ n_items }} свежих публикаций из {{ n_sources }} источников, в номер вошло {{ n_articles }}.
+  Отбор и тексты — Claude.{% if failed %} Не ответили: {{ failed|join(", ") }}.{% endif %}
+</footer>
+{% endif %}
+
+</body>
+</html>

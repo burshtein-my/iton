@@ -1,0 +1,69 @@
+{% macro meta(a) %}
+<div style="font-family:Arial,sans-serif;font-size:12px;line-height:1.45;color:#555;margin-top:4px;">
+  {% if a.availability %}<div><b style="color:#222;">Доступ:</b> {{ a.availability }}</div>{% endif %}
+  {% if a.popularity %}<div><b style="color:#222;">Популярность:</b> {{ a.popularity }}</div>{% endif %}
+  {% if a.install %}<div><b style="color:#222;">Установка:</b> <code style="background:#f2eee5;padding:0 3px;">{{ a.install }}</code></div>{% endif %}
+  {% if a.warning %}<div style="color:#a01d1d;font-weight:bold;">⚠ Проверить перед установкой: малоизвестный автор, широкий доступ.</div>{% endif %}
+  <div>{{ a.source_name }}{% if a.url %} · <a href="{{ a.url }}" style="color:#a01d1d;">{{ a.url|domain }}</a>{% endif %}</div>
+</div>
+{% endmacro %}
+<!doctype html>
+<html lang="ru">
+<body style="margin:0;padding:0;background:#f5f3ee;">
+<div style="max-width:640px;margin:0 auto;padding:20px 16px;background:#ffffff;font-family:Georgia,'PT Serif',serif;color:#141414;">
+
+  <div style="text-align:center;border-bottom:3px double #141414;padding-bottom:10px;margin-bottom:14px;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#555;">
+      {{ weekday_date }} · Выпуск № {{ issue }}
+    </div>
+    <div style="font-size:34px;font-weight:bold;letter-spacing:1px;margin-top:6px;">{{ title }}</div>
+    <div style="font-style:italic;color:#555;font-size:14px;">{{ subtitle }}</div>
+  </div>
+
+  <p style="font-family:Arial,sans-serif;font-size:13px;color:#555;margin:0 0 14px;">Газета для печати — во вложении (PDF).</p>
+
+  {% if top %}
+  <div style="background:#f2eee5;border-left:3px solid #a01d1d;padding:10px 14px;margin-bottom:18px;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#a01d1d;text-transform:uppercase;">Главное</div>
+    <ol style="margin:6px 0 0;padding-left:20px;font-size:15px;line-height:1.4;">
+      {% for t in top %}<li style="margin-bottom:4px;">{{ t }}</li>{% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  {% if lead %}
+  <div style="margin-bottom:18px;border-bottom:2px solid #141414;padding-bottom:12px;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#a01d1d;text-transform:uppercase;">{{ section_names[lead.section] }} · {{ lead.kicker }}</div>
+    <div style="font-size:24px;font-weight:bold;line-height:1.2;margin:4px 0 8px;">{{ lead.title }}</div>
+    <div style="font-size:15px;line-height:1.5;">{{ lead.text }}</div>
+    {{ meta(lead) }}
+  </div>
+  {% endif %}
+
+  {% for sec in sections %}
+  <div style="font-family:Arial,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;border-top:2px solid #141414;border-bottom:1px solid #141414;padding:4px 0;margin:18px 0 10px;">{{ sec.name }}</div>
+  {% for a in sec.articles %}
+  <div style="margin-bottom:16px;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;color:#a01d1d;text-transform:uppercase;">{{ a.kicker }}</div>
+    <div style="font-size:18px;font-weight:bold;line-height:1.25;margin:2px 0 6px;">{{ a.title }}</div>
+    <div style="font-size:15px;line-height:1.5;">{{ a.text }}</div>
+    {{ meta(a) }}
+  </div>
+  {% endfor %}
+  {% endfor %}
+
+  {% if try_this %}
+  <div style="border:1px solid #141414;padding:10px 14px;margin-top:18px;">
+    <div style="font-family:Arial,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;color:#a01d1d;text-transform:uppercase;">Стоит попробовать</div>
+    {% for t in try_this %}
+    <p style="font-size:15px;line-height:1.45;margin:6px 0;"><b>{{ t.title }}.</b> {{ t.why }}{% if t.url %} <a href="{{ t.url }}" style="color:#a01d1d;">{{ t.url|domain }}</a>{% endif %}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p style="font-family:Arial,sans-serif;font-size:11px;color:#888;margin-top:20px;border-top:1px solid #ddd;padding-top:8px;">
+    Собрано автоматически: {{ n_items }} свежих публикаций из {{ n_sources }} источников, в номер вошло {{ n_articles }}.{% if failed %} Не ответили: {{ failed|join(", ") }}.{% endif %}
+  </p>
+</div>
+</body>
+</html>
