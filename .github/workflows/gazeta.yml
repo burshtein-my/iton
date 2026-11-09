@@ -1,0 +1,67 @@
+name: AI-газета
+
+on:
+  schedule:
+    # Каждый день в 03:20 по Гринвичу = 5:20 зимой и 6:20 летом по Израилю.
+    # GitHub иногда запускает с опозданием до часа — газета всё равно успевает к утру.
+    - cron: "20 3 * * *"
+  workflow_dispatch:
+    inputs:
+      no_send:
+        description: "Только собрать и сверстать, письма не отправлять"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gazeta
+  cancel-in-progress: false
+
+jobs:
+  gazeta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Скачать код
+        uses: actions/checkout@v5
+
+      - name: Установить Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Установить библиотеки для PDF
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libpango-1.0-0 libpangoft2-1.0-0 fonts-dejavu-core
+
+      - name: Установить зависимости
+        run: pip install -r requirements.txt
+
+      - name: Собрать и отправить газету
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          PRINTER_EMAIL: ${{ secrets.PRINTER_EMAIL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python main.py ${{ inputs.no_send && '--no-send' || '' }}
+
+      - name: Сохранить PDF в запуске
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gazeta
+          path: out/
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Запомнить, что уже было в газете
+        if: success()
+        run: |
+          git config user.name "ai-gazeta"
+          git config user.email "ai-gazeta@users.noreply.github.com"
+          git add state/state.json
+          git diff --cached --quiet || (git commit -m "Память газеты: $(date +%F)" && git push)
