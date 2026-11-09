@@ -1,7 +1,9 @@
 """Отбор важного и написание заметок через Claude API."""
 from __future__ import annotations
 
+import json
 import os
+import re
 
 import anthropic
 
@@ -106,17 +108,39 @@ def _client() -> anthropic.Anthropic:
     return anthropic.Anthropic(max_retries=4)
 
 
+_AUTO_ONLY: set[str] = set()   # модели, которые не принимают обязательный вызов инструмента
+
+
 def _call_tool(client, model: str, system: str, user: str, tool: dict, max_tokens: int) -> tuple[dict, dict]:
-    resp = client.messages.create(
-        model=model, max_tokens=max_tokens, system=system,
-        tools=[tool], tool_choice={"type": "tool", "name": tool["name"]},
-        messages=[{"role": "user", "content": user}],
-    )
+    """Просим модель вернуть результат через инструмент; если модель так не умеет — мягкий режим."""
+    kwargs = dict(model=model, max_tokens=max_tokens, tools=[tool],
+                  messages=[{"role": "user", "content": user}])
+    soft_system = (system + f"\n\nОтвет дай одним вызовом инструмента {tool['name']}, "
+                            "без текста до и после.")
+    resp = None
+    if model not in _AUTO_ONLY:
+        try:
+            resp = client.messages.create(system=system, tool_choice={"type": "tool", "name": tool["name"]}, **kwargs)
+        except Exception as exc:  # некоторые модели (с постоянным «размышлением») не принимают type=tool
+            if "tool_choice" not in str(exc):
+                raise
+            _AUTO_ONLY.add(model)
+    if resp is None:
+        resp = client.messages.create(system=soft_system, tool_choice={"type": "auto"}, **kwargs)
+
     usage = {"model": model, "input": resp.usage.input_tokens, "output": resp.usage.output_tokens}
     for block in resp.content:
-        if block.type == "tool_use":
+        if block.type == "tool_use" and getattr(block, "name", tool["name"]) == tool["name"]:
             return block.input, usage
-    raise RuntimeError(f"Модель {model} не вернула результат")
+    # запасной путь: модель ответила JSON-текстом вместо вызова инструмента
+    text = "".join(getattr(b, "text", "") for b in resp.content if b.type == "text")
+    match = re.search(r"\{.*\}", text, re.S)
+    if match:
+        try:
+            return json.loads(match.group(0)), usage
+        except json.JSONDecodeError:
+            pass
+    raise RuntimeError(f"Модель {model} не вернула результат (stop_reason: {getattr(resp, 'stop_reason', '?')})")
 
 
 def _reader(config: dict) -> str:
@@ -137,7 +161,7 @@ def select(items: list[Item], config: dict) -> tuple[list[dict], dict]:
               f"Выбери не больше {max_n} публикаций. Лучше меньше, но только действительно новое и полезное. "
               "Если ничего стоящего нет — верни пустой список.")
     user = "Свежие публикации за последние сутки (для сообществ — за несколько дней):\n\n" + "\n".join(lines)
-    data, usage = _call_tool(_client(), config["models"]["select"], system, user, CHOOSE_TOOL, 3000)
+    data, usage = _call_tool(_client(), config["models"]["select"], system, user, CHOOSE_TOOL, 8000)
     picks = []
     for p in data.get("picks", [])[:max_n]:
         ids = [i for i in p.get("ids", []) if isinstance(i, int) and 0 <= i < len(items)]
@@ -178,7 +202,7 @@ def write(items: list[Item], picks: list[dict], config: dict, issue_date: str) -
         "продвижение, бытовые дела), если материал это позволяет. Не выдумывай применение, которого нет в тексте."
     )
     user = f"Дата номера: {issue_date}.\n\nМатериалы:\n\n" + "\n\n".join(blocks)
-    data, usage = _call_tool(_client(), config["models"]["write"], system, user, ISSUE_TOOL, 8000)
+    data, usage = _call_tool(_client(), config["models"]["write"], system, user, ISSUE_TOOL, 16000)
 
     # страховка: ссылки только из материалов, ровно одна главная
     for a in data.get("articles", []):

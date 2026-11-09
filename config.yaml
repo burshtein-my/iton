@@ -60,7 +60,6 @@ sources:
     - {name: "OpenAI", url: "https://openai.com/news/rss.xml", group: us}
     - {name: "Google DeepMind", url: "https://deepmind.google/blog/rss.xml", group: us}
     - {name: "Google AI", url: "https://blog.google/technology/ai/rss/", group: us}
-    - {name: "Microsoft AI", url: "https://blogs.microsoft.com/ai/feed/", group: us}
     - {name: "NVIDIA", url: "https://blogs.nvidia.com/feed/", group: us}
     - {name: "Hugging Face", url: "https://huggingface.co/blog/feed.xml", group: other}
     - {name: "Claude Code — релизы", url: "https://github.com/anthropics/claude-code/releases.atom", group: claude}
@@ -68,9 +67,7 @@ sources:
   # Сайты без RSS: скрипт запоминает ссылки на странице и сообщает о новых
   pages:
     - {name: "Anthropic", url: "https://www.anthropic.com/news", pattern: "/news/[a-z0-9-]+", group: us}
-    - {name: "Claude blog", url: "https://claude.com/blog", pattern: "/blog/[a-z0-9-]+", group: claude}
     - {name: "xAI", url: "https://x.ai/news", pattern: "/news/[a-z0-9-]+", group: us}
-    - {name: "Meta AI", url: "https://ai.meta.com/blog/", pattern: "/blog/[a-z0-9-]+", group: us}
     - {name: "DeepSeek", url: "https://api-docs.deepseek.com/news/", pattern: "/news/news[0-9a-z-]+", group: china}
 
   # Поиск по новостям Google за последние сутки
@@ -98,5 +95,5 @@ sources:
 
   # Сообщества гиков — для блока про Claude (Хабр настраивается выше, в разделе habr)
   hn_queries: ["Claude", "Anthropic", "MCP", "OpenAI", "Gemini", "DeepSeek", "Qwen"]
-  reddit: [ClaudeAI, ClaudeCode, LocalLLaMA]
+  reddit: []          # Reddit блокирует запросы с серверов GitHub
   github_queries: ["claude code", "claude skills", "mcp server", "claude plugin", "figma mcp", "claude video"]

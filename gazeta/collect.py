@@ -6,7 +6,7 @@ import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from urllib.parse import quote_plus, urljoin
+from urllib.parse import quote, quote_plus, urlencode, urljoin
 
 import feedparser
 
@@ -205,8 +205,9 @@ class Collector:
         n = 0
         for page in (1, 2):
             time.sleep(HABR_PAUSE)  # Хабр ограничивает частые запросы
-            data = http_get("https://habr.com/kek/v2/articles/", params={
-                "query": query, "order": "date", "fl": "ru", "hl": "ru", "page": str(page)}).json()
+            qs = urlencode({"query": query, "order": "date", "fl": "ru", "hl": "ru", "page": str(page)},
+                           quote_via=quote)  # пробел как %20: с «+» Хабр отвечает ошибкой 400
+            data = http_get("https://habr.com/kek/v2/articles/?" + qs).json()
             refs = data.get("publicationRefs") or {}
             for art in refs.values():
                 author = (art.get("author") or {}).get("alias", "")
